@@ -1,0 +1,81 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'source/db/**'
+      - 'test/db/**'
+
+  workflow_dispatch:
+
+#  repository_dispatch:
+#    types: [utPLSQL-build]
+
+jobs:
+  build-and-test:
+
+    env:
+      UTPLSQL_VERSION: v3.1.13
+      APP_USER: demo
+      APP_PWD: ${{ secrets.APP_USER_PASSWORD }}
+      ORA_PWD: ${{ secrets.ORACLE_PASSWORD }}
+      
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Install Oracle 23c Free
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: demo
+          app-user-password: ${{ secrets.APP_USER_PASSWORD }}
+          oracle-password: ${{ secrets.ORACLE_PASSWORD }}
+
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+
+      - name: Install Oracle SQLcl
+        uses: gvenzl/setup-oracle-sqlcl@v1
+
+      - name: Install source code
+        run: ${SQLCL_HOME}/bin/sql ${APP_USER}/${APP_PWD}@127.0.0.1/freepdb1 @source/install.sql
+
+      - name: Install utPLSQL
+        run: | 
+          git clone --depth=1 --branch=${UTPLSQL_VERSION} https://github.com/utPLSQL/utPLSQL.git utPLSQL
+          ${SQLCL_HOME}/bin/sql sys/${ORA_PWD}@127.0.0.1:1521/freepdb1 as sysdba @utPLSQL/source/install_headless.sql UT3 UT3 users
+    
+      - name: Install unit tests
+        run: ${SQLCL_HOME}/bin/sql ${APP_USER}/${APP_PWD}@127.0.0.1:1521/freepdb1 @test/install_tests.sql
+
+      - name: Install utPLSQL-cli
+        run: |
+          curl -Lk -o utPLSQL-cli.zip "https://github.com/utPLSQL/utPLSQL-cli/releases/download/3.1.9/utPLSQL-cli.zip"
+          unzip utPLSQL-cli.zip
+          chmod -R u+x utPLSQL-cli
+
+      - name: Run unit tests
+        run: |
+          set -ev
+          utPLSQL-cli/bin/utplsql run ${APP_USER}/${APP_PWD}@127.0.0.1:1521/freepdb1?oracle.net.disableOob=true \
+            -source_path=source -regex_expression="(\w+)/(\w+)/(R__)(\w+)\.(\w+)\.(\w+)$" \
+            -owner_subexpression=4 \
+            -name_subexpression=5 \
+            -type_subexpression=6 \
+            -test_path=test -regex_expression="(\w+)/(\w+)/(\w+)\.(\w+)\.(\w+)$" \
+            -owner_subexpression=1 \
+            -type_subexpression=5 \
+            -name_subexpression=4 \
+            -f=ut_documentation_reporter  -c \
+            -f=ut_coverage_sonar_reporter     -o=coverage.xml \
+            -f=ut_sonar_test_reporter         -o=test_results.xml \
+            -f=ut_coverage_cobertura_reporter -o=cobertura.xml \
+            -f=ut_junit_reporter              -o=junit_test_results.xml \
+            --failure-exit-code=0
+
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

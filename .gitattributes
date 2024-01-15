@@ -1,0 +1,15 @@
+.github                   export-ignore
+test                      export-ignore
+.gitattributes            export-ignore
+.gitignore                export-ignore
+.gitmodules               export-ignore
+sonar-project.properties  export-ignore
+^docs/**                  linguist-documentation
+*.pks                     linguist-language=PLSQL
+*.pkb                     linguist-language=PLSQL
+*.sql                     linguist-language=PLSQL
+*.fk                      linguist-language=PLSQL
+*.tpb                     linguist-language=PLSQL
+*.tps                     linguist-language=PLSQL
+*.sh		                  text eol=lf
+	
