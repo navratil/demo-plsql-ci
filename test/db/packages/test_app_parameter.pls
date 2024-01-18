@@ -3,11 +3,11 @@ create or replace package test_app_parameter as
    --%suite("Package APP_PARAMETER")
 
    --%test("Define STRING parameters")
-   --%throws(-20101)
+   --%throws(-20103)
    procedure define_string_parameters;
 
    --%test("Define BOOLEAN parameters")
-   --%throws(-20101)
+   --%throws(-20103)
    procedure define_boolean_parameters;
   
    --%test("Get and Set STRING parameters")

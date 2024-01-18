@@ -36,5 +36,16 @@ create or replace package body test_app_util as
       ut.expect(l_tag.value).to_equal(' ');
    end;
 
+   procedure format as
+      l_tag   app_util.tag_type;
+      l_count number;
+   begin
+     ut.expect(app_util.format(null, '123')).to_be_null;
+     ut.expect(app_util.format('%0%1%2')).to_be_null;
+     ut.expect(app_util.format('Error #%1', 'ABC', '123', 'XYZ')).to_equal('Error #123');
+     ut.expect(app_util.format('Hello %1.%0.%2.%2', 'ABC', '123', 'XYZ')).to_equal('Hello 123.ABC.XYZ.XYZ');
+   end;
+
+
 end test_app_util;
 /

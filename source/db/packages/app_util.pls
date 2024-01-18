@@ -40,5 +40,20 @@ create or replace package app_util is
    ) return tags_table
       pipelined;
 
+   /**
+     Returns a formatted string with substitutions applied.  
+     
+     #param p_message  Message string with %s substitution placeholders
+                       "An error number %0 happened. Extra info: %1" 
+     #param p0         Substitution parameter
+   */
+
+   function format(
+      p_message in varchar2,
+      p0        in varchar2 default null,
+      p1        in varchar2 default null,
+      p2        in varchar2 default null
+   ) return string;  
+
 end app_util;
 /

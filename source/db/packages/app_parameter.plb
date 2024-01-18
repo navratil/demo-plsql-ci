@@ -10,6 +10,16 @@ create or replace package body app_parameter as
    c_type_blob    constant varchar2(10) := 'BLOB';
    c_type_clob    constant varchar2(10) := 'CLOB';
 
+   c_error_parameter_not_found     constant number := -20101;
+   c_error_parameter_not_found_msg constant varchar2(100) := 'Parameter "%0" not defined';
+   c_error_param_not_updated       constant number := -20102;
+   c_error_param_not_updated_msg   constant varchar2(100) := 'Parameter "%0" has not been updated!';
+   c_error_param_type_change       constant number := -20103;
+   c_error_param_type_change_msg   constant varchar2(100) := 'Parameter "%0" type can not be changed from "%1" to "%2"';
+   c_error_lov_not_recognized      constant number := -20104;
+   c_error_lov_not_recognized_msg  constant varchar2(100) := 'LOV type not recognized for parameter "%0"';
+
+
    function parameter_exists(p_parameter in varchar2,
                              p_type      in varchar2) return boolean
    is
@@ -21,14 +31,8 @@ create or replace package body app_parameter as
       if l_type = p_type then
          return true;
       else
-         raise_application_error(-20101,
-                                 'Parameter "'
-            || p_parameter
-            || '" can not be "'
-            || p_type
-            || '" - already defined as "'
-            || l_type
-            || '"');
+         raise_application_error(c_error_param_type_change,
+            app_util.format(c_error_param_type_change_msg, p_parameter, l_type, p_type));
       end if;
    exception
       when no_data_found then
@@ -45,17 +49,17 @@ create or replace package body app_parameter as
        where id in (
                 select id
                   from app_parameter_tags old_tags
-                  left outer join table(app_util.tags_as_table(p_tags)) new_tags
+                  left outer join app_util.tags_as_table(p_tags) new_tags
                     on new_tags.tag = old_tags.tag
                  where (new_tags.tag is null)
                    and (old_tags.app_parameter_id = l_parameter_id)
              );
       -- add new tags from p_tags
       merge into app_parameter_tags ot
-       using table(app_util.tags_as_table(p_tags)) nt
+       using app_util.tags_as_table(p_tags) nt
        on ((ot.tag = nt.tag) and (ot.app_parameter_id = l_parameter_id))
       when matched then
-        update set ot.value = nt.value
+        update set ot.value = nt.value where ot.value != nt.value
       when not matched then
         insert (ot.app_parameter_id, ot.tag, ot.value) values (l_parameter_id, nt.tag, nt.value);
    end;
@@ -203,9 +207,7 @@ create or replace package body app_parameter as
        where parameter = p_parameter
          and parameter_type = c_type_string;
       if sql%rowcount <> 1 then
-         raise_application_error(-20102, 'Parameter "'
-            || p_parameter
-            || '" has not been updated!');
+         raise_application_error(c_error_param_not_updated, app_util.format(c_error_param_not_updated_msg, p_parameter));
       end if;
    end set_string;
 
@@ -279,13 +281,13 @@ create or replace package body app_parameter as
             close l_refcur;
          end if;
       else
-         raise_application_error(-20103,
-                                 'LOV type not recognized for parameter ' || p_parameter);
+         raise_application_error(c_error_lov_not_recognized, 
+            app_util.format(c_error_lov_not_recognized_msg, p_parameter));
       end if;
    exception
       when no_data_found then
-         null;
-      --  report_missing_param(p_namespace, p_parameter);
+         raise_application_error(c_error_parameter_not_found, 
+            app_util.format(c_error_parameter_not_found_msg, p_parameter));
    end string_lov;
 
    procedure set_number(p_parameter in varchar2,
@@ -295,9 +297,8 @@ create or replace package body app_parameter as
        where parameter = p_parameter
          and parameter_type = c_type_number;
       if sql%rowcount <> 1 then
-         raise_application_error(-20102, 'Parameter "'
-            || p_parameter
-            || '" has not been updated!');
+         raise_application_error(c_error_param_not_updated,
+            app_util.format(c_error_param_not_updated_msg, p_parameter));
       end if;
    end set_number;
 
@@ -322,10 +323,9 @@ create or replace package body app_parameter as
        where parameter = p_parameter
          and parameter_type = c_type_boolean;
       if sql%rowcount <> 1 then
-         raise_application_error(-20102, 'Parameter "'
-            || p_parameter
-            || '" has not been updated!');
-      end if;
+          raise_application_error(c_error_param_not_updated, 
+            app_util.format(c_error_param_not_updated_msg, p_parameter));
+     end if;
    end set_boolean;
 
    function get_boolean(p_parameter in varchar2) return boolean

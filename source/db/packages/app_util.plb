@@ -43,5 +43,22 @@ create or replace package body app_util as
       end if;
    end;
 
+   function format(
+      p_message in varchar2,
+      p0        in varchar2 default null,
+      p1        in varchar2 default null,
+      p2        in varchar2 default null
+   ) return string
+   is
+      l_str varchar2(1000); 
+   begin
+      l_str := replace(p_message, '%0', p0);
+      l_str := replace(l_str, '%1', p1);
+      l_str := replace(l_str, '%2', p2);
+      return l_str;
+   end;
+ 
+
+
 end app_util;
 /
