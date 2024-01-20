@@ -14,8 +14,8 @@ jobs:
     environment: dev
 
     env:
-      DB_CONNECT: ${{ var.DB_CONNECT }}
-      APP_USER: ${{ var.APP_USER }}
+      DB_CONNECT: ${{ vars.DB_CONNECT }}
+      APP_USER: ${{ vars.APP_USER }}
       APP_USER_PASSWORD: ${{ secrets.APP_USER_PASSWORD }}
     
     steps: 
