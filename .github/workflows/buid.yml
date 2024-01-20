@@ -68,3 +68,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  deploy-to-dev:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      DB_CONNECT: ${{ vars.DB_CONNECT }}
+      APP_USER: ${{ vars.APP_USER }}
+      APP_USER_PASSWORD: ${{ secrets.APP_USER_PASSWORD }}
+    
+    steps: 
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+        
+      - name: Create Cloud Config DB Wallet
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.DB_WALLET }}
+          filename: dbwallet.zip
+
+      - name: Install Oracle SQLcl
+        uses: gvenzl/setup-oracle-sqlcl@v1
+
+      - name: Deploy to the database
+        run: ${SQLCL_HOME}/bin/sql -cloudconfig dbwallet.zip ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
