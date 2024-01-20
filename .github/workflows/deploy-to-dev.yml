@@ -25,9 +25,17 @@ jobs:
       - name: Install Oracle SQLcl
         uses: gvenzl/setup-oracle-sqlcl@v1
 
+      - name: Install Oracle DB Wallet
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.DB_WALLET }}
+          filename: "dbwallet.zip"
+          is-executable: false
+#          working-directory: ""
+
       - name: Show DB config 
-        run: echo ${APP_USER}@${DB_CONNECT}
+        run: -ls -l *.zip 
 
       - name: Install source code
-        run: ${SQLCL_HOME}/bin/sql ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
+        run: ${SQLCL_HOME}/bin/sql -cloudconfig dbwallet.zip ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
 
