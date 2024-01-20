@@ -22,9 +22,6 @@ jobs:
       - name: Checkout source code 
         uses: actions/checkout@v4
         
-      - name: Install Oracle SQLcl
-        uses: gvenzl/setup-oracle-sqlcl@v1
-
       - name: Install Oracle DB Wallet
         uses: mobiledevops/secret-to-file-action@v1
         with:
@@ -34,7 +31,10 @@ jobs:
 #          working-directory: ""
 
       - name: Show DB config 
-        run: -ls -l *.zip 
+        run: ls -l *.zip 
+
+      - name: Install Oracle SQLcl
+        uses: gvenzl/setup-oracle-sqlcl@v1
 
       - name: Install source code
         run: ${SQLCL_HOME}/bin/sql -cloudconfig dbwallet.zip ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
