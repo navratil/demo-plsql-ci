@@ -22,20 +22,16 @@ jobs:
       - name: Checkout source code 
         uses: actions/checkout@v4
         
-      - name: Install Oracle DB Wallet
+      - name: Create Cloud Config DB Wallet
         uses: mobiledevops/secret-to-file-action@v1
         with:
           base64-encoded-secret: ${{ secrets.DB_WALLET }}
           filename: "dbwallet.zip"
           is-executable: false
-#          working-directory: ""
-
-      - name: Show DB config 
-        run: ls -l *.zip 
 
       - name: Install Oracle SQLcl
         uses: gvenzl/setup-oracle-sqlcl@v1
 
-      - name: Install source code
+      - name: Deploy code to the dabase
         run: ${SQLCL_HOME}/bin/sql -cloudconfig dbwallet.zip ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
 
