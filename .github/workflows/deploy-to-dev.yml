@@ -1,0 +1,33 @@
+name: Deploy to DEV
+
+on:
+#  push:
+#    branches: [ main ]
+#    paths:
+#      - 'source/db/**'
+
+  workflow_dispatch:
+
+jobs:
+  deploy-to-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      DB_CONNECT: ${{ var.DB_CONNECT }}
+      APP_USER: ${{ var.APP_USER }}
+      APP_USER_PASSWORD: ${{ secrets.APP_USER_PASSWORD }}
+    
+    steps: 
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+        
+      - name: Install Oracle SQLcl
+        uses: gvenzl/setup-oracle-sqlcl@v1
+
+      - name: Show DB config 
+        run: echo ${APP_USER}@${DB_CONNECT}
+
+      - name: Install source code
+        run: ${SQLCL_HOME}/bin/sql ${APP_USER}/${APP_USER_PASSWORD}@${DB_CONNECT} @source/install.sql
+
